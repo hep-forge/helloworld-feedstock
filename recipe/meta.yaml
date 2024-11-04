@@ -1,0 +1,48 @@
+{% set versions = {
+    "0.2.0-custom": "459a0be5fa686c3717f3b3db459a8ae3fd54d683028ab0ee8d265ea842002866",
+    "0.2.0":        "547589b3073f23d423fdacfe6c143eefe92fcf2fd452d2ef422cb4e8bd1ae948"
+} %}
+
+{% set version = environ.get('COMMIT_VERSION', None) %}
+{% set version = version or versions.keys()|first %}
+{% set version = version|string %}
+
+package:
+  name: {{ environ.get('ANACONDA_PACKAGE', 'helloworld')|string|lower }}
+  version: {{ environ.get('ANACONDA_VERSION', version)|replace("-", ".") }}
+
+source:
+  url: "https://github.com/hep-forge/helloworld/archive/refs/tags/{{ version }}.tar.gz"
+  {% if versions.get(version, None) %}
+  sha256: {{ versions.get(version) }}
+  {% endif %}
+  patches:
+    - patches/hi.patch # [osx]
+
+requirements:
+  build:
+
+    - {{ compiler('gfortran') }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - gtest
+    - cmake
+    - make
+
+  host:
+    - python
+    - numpy
+    - pip
+
+  run:
+    - python
+    - numpy
+
+about:
+  home: "https://github.com/hep-forge/helloworld"
+  license: "MIT"
+  summary: "Demo package for building feedstocks in your own conda channel"
+
+extra:
+  recipe-maintainers:
+    - meiyasan

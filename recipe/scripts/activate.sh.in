@@ -1,0 +1,4 @@
+#! /bin/bash
+
+echo "\`@PKG_NAME@\` environment activation."
+export HELLO="Hello, World! << from @PKG_NAME@-@PKG_VERSION@"

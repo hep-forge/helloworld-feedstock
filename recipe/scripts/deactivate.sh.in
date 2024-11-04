@@ -1,0 +1,4 @@
+#! /bin/bash
+
+echo "\`@PKG_NAME@\` environment deactivation."
+unset HELLO
