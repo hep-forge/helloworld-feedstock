@@ -103,8 +103,8 @@ jobs:
 
           echo "🎉 **The environment is successfully configured and all requirements are met.**" >> $GITHUB_STEP_SUMMARY
   
-  build:
-    runs-on: ubuntu-latest
+  build-linux-amd64:
+    runs-on: ubuntu-24.04
     needs: env
     steps:
 
@@ -142,7 +142,70 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: conda-packages
+          name: conda-packages-amd64
+          path: pkgs/*/*.conda
+
+      - name: Job Summary
+        if: success()
+        env:
+          ANACONDA_PACKAGE: ${{ needs.env.outputs.ANACONDA_PACKAGE }}
+          ANACONDA_VERSION: ${{ needs.env.outputs.ANACONDA_VERSION }}
+          ANACONDA_LABEL: ${{ needs.env.outputs.ANACONDA_LABEL }}
+        run: |
+          echo "## 🎉 Build and Upload Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 📦 Package Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package Name:** \`${ANACONDA_PACKAGE}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** \`${ANACONDA_VERSION}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Label:** \`${ANACONDA_LABEL}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Variants:** $(echo "${PACKAGE_PATH}" | wc -l)" >> $GITHUB_STEP_SUMMARY
+          for PACKAGE_PATH in $(find pkgs -name "*.conda" | sort); do
+              PACKAGE_SIZE=$(stat -c%s "$PACKAGE_PATH")
+              echo "  * \`$(basename ${PACKAGE_PATH})\` ~ $((${PACKAGE_SIZE:-0} / 1024))KB" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    needs: env
+    steps:
+
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+          
+      - name: Install Forge & Tools
+        run: |
+          /usr/share/miniconda/bin/conda install -c conda-forge -y conda-smithy conda-verify conda-package-handling
+          /usr/share/miniconda/bin/conda config --add channels defaults
+          /usr/share/miniconda/bin/conda config --add channels conda-forge
+          /usr/share/miniconda/bin/conda config --add channels hep-forge
+          
+      - name: Build Package
+        env:
+          COMMIT_LATEST_TAG: ${{needs.env.outputs.COMMIT_LATEST_TAG}}
+          COMMIT_VERSION: ${{needs.env.outputs.COMMIT_VERSION}} 
+          COMMIT_TYPE: ${{ needs.env.outputs.COMMIT_TYPE }}
+          COMMIT_SHA: ${{needs.env.outputs.COMMIT_SHA}}
+          COMMIT_TAG: ${{needs.env.outputs.COMMIT_TAG}}
+
+          ANACONDA_LABEL:   ${{ needs.env.outputs.ANACONDA_LABEL }}
+          ANACONDA_VERSION: ${{ needs.env.outputs.ANACONDA_VERSION }}
+          ANACONDA_PACKAGE: ${{ needs.env.outputs.ANACONDA_PACKAGE }}
+        run: |
+          /usr/share/miniconda/bin/conda build recipe --output-folder pkgs
+          for PKG in $(find pkgs -name "*.tar.bz2"); do  
+              /usr/share/miniconda/bin/cph transmute $PKG .conda
+          done
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-packages-arm64
           path: pkgs/*/*.conda
 
       - name: Job Summary
@@ -168,14 +231,21 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    needs: [env, build]
+    needs: [env, build-linux-amd64, build-linux-arm64]
     steps:
 
-      - name: Download Artifacts
+      - name: Download AMD64 Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: conda-packages
-          path: pkgs
+          name: conda-packages-amd64
+          path: pkgs-amd64
+
+      - name: Download ARM64 Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: conda-packages-arm64
+          path: pkgs-arm64
+
 
       - name: Install Forge & Tools
         run: |
@@ -189,7 +259,10 @@ jobs:
           ANACONDA_TOKEN:   ${{ secrets.ANACONDA_TOKEN }}
         run: |
           [ -z "$ANACONDA_VERSION" ] && exit 1
-          for CONDA in $(find pkgs -name "*.conda" | sort); do         
+          for CONDA in $(find pkgs-amd64 -name "*.conda" | sort); do         
+            /usr/share/miniconda/bin/anaconda -t $ANACONDA_TOKEN upload --force "$CONDA" --label "$ANACONDA_LABEL"
+          done
+          for CONDA in $(find pkgs-arm64 -name "*.conda" | sort); do         
             /usr/share/miniconda/bin/anaconda -t $ANACONDA_TOKEN upload --force "$CONDA" --label "$ANACONDA_LABEL"
           done
 
