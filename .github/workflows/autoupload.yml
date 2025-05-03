@@ -188,13 +188,6 @@ jobs:
           conda update -q conda
           conda info -a
 
-      - name: Create Conda environment
-        run: |
-          source "$HOME/miniforge/etc/profile.d/conda.sh"
-          conda create -n myenv python=3.11
-          conda activate myenv
-          python --version
-
       - name: Checkout Code
         uses: actions/checkout@v4
           
