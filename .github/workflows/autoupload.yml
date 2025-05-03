@@ -113,15 +113,15 @@ jobs:
         with:
           auto-update-conda: true
 
-      - name: Checkout Code
-        uses: actions/checkout@v4
-          
       - name: Install Forge & Tools
         run: |
           /usr/share/miniconda/bin/conda install -c conda-forge -y conda-smithy conda-verify conda-package-handling
           /usr/share/miniconda/bin/conda config --add channels defaults
           /usr/share/miniconda/bin/conda config --add channels conda-forge
           /usr/share/miniconda/bin/conda config --add channels hep-forge
+          
+      - name: Checkout Code
+        uses: actions/checkout@v4
           
       - name: Build Package
         env:
@@ -179,21 +179,21 @@ jobs:
       - name: Install Miniforge (ARM64)
         run: |
           wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh -O ~/miniforge.sh
-          bash ~/miniforge.sh -b -p $HOME/miniforge
-          echo "$HOME/miniforge/bin" >> $GITHUB_PATH
-          source "$HOME/miniforge/etc/profile.d/conda.sh"
+          sudo bash /tmp/miniforge.sh -b -p /usr/share/miniconda
+          echo "/usr/share/miniconda/bin" >> $GITHUB_PATH
+          source /usr/share/miniconda/etc/profile.d/conda.sh
           conda init bash
           conda update -n base -c defaults conda
 
-      - name: Checkout Code
-        uses: actions/checkout@v4
-          
       - name: Install Forge & Tools
         run: |
           /usr/share/miniconda/bin/conda install -c conda-forge -y conda-smithy conda-verify conda-package-handling
           /usr/share/miniconda/bin/conda config --add channels defaults
           /usr/share/miniconda/bin/conda config --add channels conda-forge
           /usr/share/miniconda/bin/conda config --add channels hep-forge
+          
+      - name: Checkout Code
+        uses: actions/checkout@v4
           
       - name: Build Package
         env:
