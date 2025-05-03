@@ -178,19 +178,19 @@ jobs:
 
       - name: Install Miniforge (ARM64)
         run: |
-          wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh -O ~/miniforge.sh
-          sudo bash ~/miniforge.sh -b -p ~/miniconda
-          echo "~/miniconda/bin" >> $GITHUB_PATH
-          source ~/miniconda/etc/profile.d/conda.sh
+          wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh -O $HOME/miniforge.sh
+          bash $HOME/miniforge.sh -b -p $HOME/miniconda
+          echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+          source $HOME/miniconda/etc/profile.d/conda.sh
           conda init bash
           conda update -n base -c defaults conda
 
       - name: Install Forge & Tools
         run: |
-          ~/miniconda/bin/conda install -c conda-forge -y conda-smithy conda-verify conda-package-handling
-          ~/miniconda/bin/conda config --add channels defaults
-          ~/miniconda/bin/conda config --add channels conda-forge
-          ~/miniconda/bin/conda config --add channels hep-forge
+          $HOME/miniconda/bin/conda install -c conda-forge -y conda-smithy conda-verify conda-package-handling
+          $HOME/miniconda/bin/conda config --add channels defaults
+          $HOME/miniconda/bin/conda config --add channels conda-forge
+          $HOME/miniconda/bin/conda config --add channels hep-forge
           
       - name: Checkout Code
         uses: actions/checkout@v4
