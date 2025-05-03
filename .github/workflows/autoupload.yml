@@ -181,12 +181,9 @@ jobs:
           wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh -O ~/miniforge.sh
           bash ~/miniforge.sh -b -p $HOME/miniforge
           echo "$HOME/miniforge/bin" >> $GITHUB_PATH
-          echo ". $HOME/miniforge/etc/profile.d/conda.sh" >> $GITHUB_ENV
           source "$HOME/miniforge/etc/profile.d/conda.sh"
           conda init bash
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda info -a
+          conda update -n base -c defaults conda
 
       - name: Checkout Code
         uses: actions/checkout@v4
