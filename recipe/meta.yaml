@@ -30,7 +30,7 @@ requirements:
     - make
 
   host:
-    - python
+    - python=3.10
     - numpy
     - pip
 
