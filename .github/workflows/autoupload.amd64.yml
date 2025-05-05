@@ -1,4 +1,4 @@
-name: Anaconda AMD64 Build & Upload
+name: Anaconda Build & Upload (AMD64)
 
 on:
   push:
