@@ -126,6 +126,7 @@ jobs:
       - name: Install Forge & Tools
         run: |
           $HOME/miniconda/bin/conda install -c conda-forge -y "python=3.10" conda-smithy conda-verify conda-package-handling
+          $HOME/miniconda/bin/conda config --set channel_priority strict
           $HOME/miniconda/bin/conda config --add channels defaults
           $HOME/miniconda/bin/conda config --add channels conda-forge
           $HOME/miniconda/bin/conda config --add channels hep-forge
