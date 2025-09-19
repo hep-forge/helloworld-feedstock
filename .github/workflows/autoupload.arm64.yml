@@ -52,25 +52,36 @@ jobs:
         name: Set Package Name, Version and Label
         run: |
           [ -n "$COMMIT_TYPE" ] && COMMIT_TYPE="-$COMMIT_TYPE"
-          [[ $COMMIT_VERSION == *-* ]] && ANACONDA_LABEL=${COMMIT_VERSION#*-} || ANACONDA_LABEL="$GITHUB_REF_NAME"
+
+          # Split COMMIT_VERSION into base and label (e.g., 1.2.3-rc1)
+          RAW_VERSION="${COMMIT_VERSION#v}"
+          if [[ "$RAW_VERSION" == *-* ]]; then
+            BASE_VERSION="${RAW_VERSION%%-*}"
+            SPLIT_LABEL="${RAW_VERSION#*-}"
+          else
+            BASE_VERSION="$RAW_VERSION"
+            SPLIT_LABEL=""
+          fi
 
           ANACONDA_PACKAGE=$(basename `git rev-parse --show-toplevel` | sed 's,-feedstock,,g')
           echo "ANACONDA_PACKAGE=$ANACONDA_PACKAGE" >> $GITHUB_ENV
           echo "ANACONDA_PACKAGE=$ANACONDA_PACKAGE" >> $GITHUB_OUTPUT
+          
+          # Existing branch/ref fallback
+          BRANCH_LABEL="${{ github.event.pull_request.base.ref || github.ref }}"
+          BRANCH_LABEL="${BRANCH_LABEL#refs/heads/}"
 
-          ANACONDA_LABEL="${{ github.event.pull_request.base.ref || github.ref }}"
-          ANACONDA_LABEL="${ANACONDA_LABEL#refs/heads/}"
+          # Prefer label from tag suffix; else fallback to branch/ref; default main
+          ANACONDA_LABEL="${SPLIT_LABEL:-$BRANCH_LABEL}"
           ANACONDA_LABEL="${ANACONDA_LABEL:-main}"
-         
           echo "ANACONDA_LABEL=$ANACONDA_LABEL" >> $GITHUB_ENV
           echo "ANACONDA_LABEL=$ANACONDA_LABEL" >> $GITHUB_OUTPUT
 
-          ANACONDA_VERSION=${COMMIT_VERSION//-/.}
-          ANACONDA_VERSION=${ANACONDA_VERSION//.${ANACONDA_LABEL}/}
-          ANACONDA_VERSION=${ANACONDA_VERSION:-0.0.0}${COMMIT_TYPE//-/.}
+          # Version is just the base X.Y.Z (no label), with .dev for non-tag builds
+          ANACONDA_VERSION="${BASE_VERSION:-0.0.0}${COMMIT_TYPE//-/.}"
           echo "ANACONDA_VERSION=$ANACONDA_VERSION" >> $GITHUB_ENV
           echo "ANACONDA_VERSION=$ANACONDA_VERSION" >> $GITHUB_OUTPUT
-
+          
       - name: Print GitHub Context as JSON 
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
